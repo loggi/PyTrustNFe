@@ -18,8 +18,7 @@ from pytrustnfe.xml import sanitize_response
 class test_nfse_paulistana(unittest.TestCase):
 
     caminho = os.path.dirname(__file__)
-    maxDiff = None
-
+  
     def _get_rps(self):
         rps = [
             {
