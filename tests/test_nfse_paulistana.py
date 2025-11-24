@@ -46,6 +46,13 @@ class test_nfse_paulistana(unittest.TestCase):
                 "codigo_atividade": "07498",
                 "aliquota_atividade": "5.00",
                 "descricao": "Venda de servico",
+                "ibs_cbs": {
+                    "finalidade_nfse": "0",
+                    "operacao_de_uso": "0",
+                    "codigo_indicador_da_operacao": "100301",
+                    "tipo_do_destinatario": "1",
+                    "classificacao_tributaria": "200028"
+                }
             }
         ]
         return rps
@@ -78,7 +85,14 @@ class test_nfse_paulistana(unittest.TestCase):
                 "aliquota_atividade": "5.00",
                 "descricao": "Venda de servico",
                 "valor_carga_tributaria": "30.00",
-                "fonte_carga_tributaria": "IBPT"
+                "fonte_carga_tributaria": "IBPT",
+                "ibs_cbs": {
+                    "finalidade_nfse": "0",
+                    "operacao_de_uso": "0",
+                    "codigo_indicador_da_operacao": "100301",
+                    "tipo_do_destinatario": "1",
+                    "classificacao_tributaria": "200028"
+                }
 
             }
         ]
@@ -111,6 +125,8 @@ class test_nfse_paulistana(unittest.TestCase):
             retorno.service.EnvioLoteRPS.return_value = xml_return
 
             retorno = envio_lote_rps(pfx, nfse=nfse)
+
+            import pdb; pdb.set_trace()
 
             self.assertEqual(retorno["received_xml"], xml_return)
             self.assertEqual(retorno["object"].Cabecalho.Sucesso, True)
