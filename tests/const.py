@@ -52,5 +52,6 @@ NFSE = {
     'cpf_cnpj': '12345678901234',
     'data_inicio': '2016-08-29',
     'data_fim': '2016-08-29',
-    'lista_rps': []
+    'lista_rps': [],
+    'versao': '2'
 }

@@ -107,6 +107,7 @@ class test_nfse_paulistana(unittest.TestCase):
             "data_inicio": "2016-08-29",
             "data_fim": "2016-08-29",
             "lista_rps": rps,
+            "versao": "2",
         }
         return nfse
 
