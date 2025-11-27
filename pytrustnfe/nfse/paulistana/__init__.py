@@ -38,7 +38,7 @@ def _send(certificado, method, **kwargs):
         xml_send = render_xml(path, "EnvioLoteRPS.xml", False, **kwargs)
     else:
         xml_send = render_xml(path, "%s.xml" % method, False, **kwargs)
-    base_url = "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx?wsdl"
+    base_url = "https://nfews.prefeitura.sp.gov.br/lotenfe.asmx?WSDL"
 
     cert, key = extract_cert_and_key_from_pfx(certificado.pfx, certificado.password)
     cert, key = save_cert_key(cert, key)

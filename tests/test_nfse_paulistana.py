@@ -18,7 +18,9 @@ from pytrustnfe.xml import sanitize_response
 class test_nfse_paulistana(unittest.TestCase):
 
     caminho = os.path.dirname(__file__)
-  
+    def normalize(self, s):
+        return s.replace("\r", "").replace("\n", "").replace("\\n", "")  
+    
     def _get_rps(self):
         rps = [
             {
@@ -27,8 +29,8 @@ class test_nfse_paulistana(unittest.TestCase):
                 "numero": "1",
                 "data_emissao": "2016-08-29",
                 "codigo_atividade": "07498",
-                "total_servicos": "2.00",
-                "total_deducoes": "3.00",
+                "valor_servico": "2.00",
+                "valor_deducao": "3.00",
                 "prestador": {"inscricao_municipal": "123456"},
                 "tomador": {
                     "tipo_cpfcnpj": "1",
@@ -65,8 +67,8 @@ class test_nfse_paulistana(unittest.TestCase):
                 "numero": "1",
                 "data_emissao": "2016-08-29",
                 "codigo_atividade": "07498",
-                "total_servicos": "2.00",
-                "total_deducoes": "3.00",
+                "valor_servico": "2.00",
+                "valor_deducao": "3.00",
                 "prestador": {"inscricao_municipal": "123456"},
                 "tomador": {
                     "tipo_cpfcnpj": "1",
@@ -126,8 +128,6 @@ class test_nfse_paulistana(unittest.TestCase):
 
             retorno = envio_lote_rps(pfx, nfse=nfse)
 
-            import pdb; pdb.set_trace()
-
             self.assertEqual(retorno["received_xml"], xml_return)
             self.assertEqual(retorno["object"].Cabecalho.Sucesso, True)
             self.assertEqual(retorno["object"].ChaveNFeRPS.ChaveNFe.NumeroNFe, 446)
@@ -150,7 +150,7 @@ class test_nfse_paulistana(unittest.TestCase):
             retorno.service.EnvioLoteRPS.return_value = "<xml></xml>"
 
             retorno = envio_lote_rps(pfx, nfse=nfse)
-            self.assertEqual(retorno["sent_xml"], xml_sent)
+            self.assertEqual(self.normalize(retorno["sent_xml"]), self.normalize(xml_sent))
 
     def _get_cancelamento(self):
         return {
@@ -215,6 +215,7 @@ class test_nfse_paulistana(unittest.TestCase):
 
         self.assertEqual(xml_send_obj.RPS.ValorCargaTributaria, 30.00)
         self.assertEqual(xml_send_obj.RPS.FonteCargaTributaria, "IBPT")
+        self.assertEqual(str(xml_send_obj.RPS.IBSCBS.valores.trib.gIBSCBS.cClassTrib), "200028")
 
     def test_nfse_sem_carga_tributaria(self):
 

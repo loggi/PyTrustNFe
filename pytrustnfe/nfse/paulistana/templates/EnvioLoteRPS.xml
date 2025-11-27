@@ -7,8 +7,6 @@
     <dtInicio>{{ nfse.data_inicio }}</dtInicio>
     <dtFim>{{ nfse.data_fim }}</dtFim>
     <QtdRPS>{{ nfse.lista_rps|length }}</QtdRPS>
-    <ValorTotalServicos>{{ nfse.total_servicos }}</ValorTotalServicos>
-    <ValorTotalDeducoes>{{ nfse.total_deducoes }}</ValorTotalDeducoes>
   </Cabecalho>
   {% for rps in nfse.lista_rps -%}
   <RPS xmlns="">
@@ -22,7 +20,6 @@
     <DataEmissao>{{ rps.data_emissao }}</DataEmissao>
     <StatusRPS>N</StatusRPS>
     <TributacaoRPS>{{ rps.tributacao_rps | default('T') }}</TributacaoRPS>
-    <ValorServicos>{{ rps.valor_servico }}</ValorServicos>
     <ValorDeducoes>{{ rps.valor_deducao }}</ValorDeducoes>
     <ValorPIS>{{ rps.valor_pis | default('0.00') }}</ValorPIS>
     <ValorCOFINS>{{ rps.valor_cofins | default('0.00') }}</ValorCOFINS>
@@ -70,13 +67,18 @@
     {% endif %}
     {% if rps.tomador.email %}<EmailTomador>{{ rps.tomador.email }}</EmailTomador>{% endif %}
     <Discriminacao>{{ rps.descricao|normalize|escape }}</Discriminacao>
+    <ValorFinalCobrado>{{ rps.valor_servico }}</ValorFinalCobrado>
+    <ValorIPI>{{ rps.valor_ipi | default('0') }}</ValorIPI>
+		<ExigibilidadeSuspensa>{{ rps.exigibilidade_suspensa | default('0') }}</ExigibilidadeSuspensa>
+    <PagamentoParceladoAntecipado>{{ rps.pagamento_parcelado_antecipado | default('0') }}</PagamentoParceladoAntecipado>
     {% if rps.valor_carga_tributaria %}
     <ValorCargaTributaria>{{ rps.valor_carga_tributaria }}</ValorCargaTributaria>
     {% endif %}
     {% if rps.fonte_carga_tributaria %}
     <FonteCargaTributaria>{{ rps.fonte_carga_tributaria }}</FonteCargaTributaria>
-
     {% endif %}
+    {% if rps.nbs %}<NBS>{{ rps.nbs }}</NBS>{% endif %}
+    {% if rps.local_da_prestacao %}<cLocPrestacao>{{ rps.local_da_prestacao }}</cLocPrestacao>{% endif %}
     {% if rps.ibs_cbs %}
 		<IBSCBS>
 			<finNFSe>{{ rps.ibs_cbs.finalidade_nfse }}</finNFSe>
