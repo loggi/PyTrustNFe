@@ -18,7 +18,9 @@ from pytrustnfe.xml import sanitize_response
 class test_nfse_paulistana(unittest.TestCase):
 
     caminho = os.path.dirname(__file__)
-  
+    def normalize(self, s):
+        return s.replace("\r", "").replace("\n", "").replace("\\n", "")  
+    
     def _get_rps(self):
         rps = [
             {
@@ -27,8 +29,8 @@ class test_nfse_paulistana(unittest.TestCase):
                 "numero": "1",
                 "data_emissao": "2016-08-29",
                 "codigo_atividade": "07498",
-                "total_servicos": "2.00",
-                "total_deducoes": "3.00",
+                "valor_servico": "2.00",
+                "valor_deducao": "3.00",
                 "prestador": {"inscricao_municipal": "123456"},
                 "tomador": {
                     "tipo_cpfcnpj": "1",
@@ -46,6 +48,13 @@ class test_nfse_paulistana(unittest.TestCase):
                 "codigo_atividade": "07498",
                 "aliquota_atividade": "5.00",
                 "descricao": "Venda de servico",
+                "ibs_cbs": {
+                    "finalidade_nfse": "0",
+                    "operacao_de_uso": "0",
+                    "codigo_indicador_da_operacao": "100301",
+                    "tipo_do_destinatario": "1",
+                    "classificacao_tributaria": "200028"
+                }
             }
         ]
         return rps
@@ -58,8 +67,8 @@ class test_nfse_paulistana(unittest.TestCase):
                 "numero": "1",
                 "data_emissao": "2016-08-29",
                 "codigo_atividade": "07498",
-                "total_servicos": "2.00",
-                "total_deducoes": "3.00",
+                "valor_servico": "2.00",
+                "valor_deducao": "3.00",
                 "prestador": {"inscricao_municipal": "123456"},
                 "tomador": {
                     "tipo_cpfcnpj": "1",
@@ -78,7 +87,14 @@ class test_nfse_paulistana(unittest.TestCase):
                 "aliquota_atividade": "5.00",
                 "descricao": "Venda de servico",
                 "valor_carga_tributaria": "30.00",
-                "fonte_carga_tributaria": "IBPT"
+                "fonte_carga_tributaria": "IBPT",
+                "ibs_cbs": {
+                    "finalidade_nfse": "0",
+                    "operacao_de_uso": "0",
+                    "codigo_indicador_da_operacao": "100301",
+                    "tipo_do_destinatario": "1",
+                    "classificacao_tributaria": "200028"
+                }
 
             }
         ]
@@ -91,6 +107,7 @@ class test_nfse_paulistana(unittest.TestCase):
             "data_inicio": "2016-08-29",
             "data_fim": "2016-08-29",
             "lista_rps": rps,
+            "versao": "2",
         }
         return nfse
 
@@ -134,7 +151,7 @@ class test_nfse_paulistana(unittest.TestCase):
             retorno.service.EnvioLoteRPS.return_value = "<xml></xml>"
 
             retorno = envio_lote_rps(pfx, nfse=nfse)
-            self.assertEqual(retorno["sent_xml"], xml_sent)
+            self.assertEqual(self.normalize(retorno["sent_xml"]), self.normalize(xml_sent))
 
     def _get_cancelamento(self):
         return {
@@ -199,6 +216,7 @@ class test_nfse_paulistana(unittest.TestCase):
 
         self.assertEqual(xml_send_obj.RPS.ValorCargaTributaria, 30.00)
         self.assertEqual(xml_send_obj.RPS.FonteCargaTributaria, "IBPT")
+        self.assertEqual(str(xml_send_obj.RPS.IBSCBS.valores.trib.gIBSCBS.cClassTrib), "200028")
 
     def test_nfse_sem_carga_tributaria(self):
 

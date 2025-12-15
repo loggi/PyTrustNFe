@@ -1,5 +1,5 @@
 <PedidoEnvioLoteRPS xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.prefeitura.sp.gov.br/nfe">
-  <Cabecalho Versao="1" xmlns="">
+  <Cabecalho Versao="{{ nfse.versao | default('1') }}" xmlns="">
     <CPFCNPJRemetente>
       <CNPJ>{{ nfse.cpf_cnpj }}</CNPJ>
     </CPFCNPJRemetente>
@@ -7,8 +7,10 @@
     <dtInicio>{{ nfse.data_inicio }}</dtInicio>
     <dtFim>{{ nfse.data_fim }}</dtFim>
     <QtdRPS>{{ nfse.lista_rps|length }}</QtdRPS>
+    {% if nfse.versao != "2" %}
     <ValorTotalServicos>{{ nfse.total_servicos }}</ValorTotalServicos>
     <ValorTotalDeducoes>{{ nfse.total_deducoes }}</ValorTotalDeducoes>
+    {% endif %}
   </Cabecalho>
   {% for rps in nfse.lista_rps -%}
   <RPS xmlns="">
@@ -22,7 +24,9 @@
     <DataEmissao>{{ rps.data_emissao }}</DataEmissao>
     <StatusRPS>N</StatusRPS>
     <TributacaoRPS>{{ rps.tributacao_rps | default('T') }}</TributacaoRPS>
+    {% if nfse.versao != "2" %}
     <ValorServicos>{{ rps.valor_servico }}</ValorServicos>
+    {% endif %}
     <ValorDeducoes>{{ rps.valor_deducao }}</ValorDeducoes>
     <ValorPIS>{{ rps.valor_pis | default('0.00') }}</ValorPIS>
     <ValorCOFINS>{{ rps.valor_cofins | default('0.00') }}</ValorCOFINS>
@@ -70,11 +74,81 @@
     {% endif %}
     {% if rps.tomador.email %}<EmailTomador>{{ rps.tomador.email }}</EmailTomador>{% endif %}
     <Discriminacao>{{ rps.descricao|normalize|escape }}</Discriminacao>
+    {% if nfse.versao == '2' %}
+    <ValorFinalCobrado>{{ rps.valor_servico }}</ValorFinalCobrado>
+    <ValorIPI>{{ rps.valor_ipi | default('0') }}</ValorIPI>
+		<ExigibilidadeSuspensa>{{ rps.exigibilidade_suspensa | default('0') }}</ExigibilidadeSuspensa>
+    <PagamentoParceladoAntecipado>{{ rps.pagamento_parcelado_antecipado | default('0') }}</PagamentoParceladoAntecipado>
+    {% endif %}
     {% if rps.valor_carga_tributaria %}
     <ValorCargaTributaria>{{ rps.valor_carga_tributaria }}</ValorCargaTributaria>
     {% endif %}
     {% if rps.fonte_carga_tributaria %}
     <FonteCargaTributaria>{{ rps.fonte_carga_tributaria }}</FonteCargaTributaria>
+    {% endif %}
+    {% if nfse.versao == '2' and rps.nbs %}<NBS>{{ rps.nbs }}</NBS>{% endif %}
+    {% if nfse.versao == '2' and rps.local_da_prestacao %}<cLocPrestacao>{{ rps.local_da_prestacao }}</cLocPrestacao>{% endif %}
+    {% if nfse.versao == '2' and rps.ibs_cbs %}
+		<IBSCBS>
+			<finNFSe>{{ rps.ibs_cbs.finalidade_nfse }}</finNFSe>
+			<indFinal>{{ rps.ibs_cbs.operacao_de_uso }}</indFinal>
+			<cIndOp>{{ rps.ibs_cbs.codigo_indicador_da_operacao }}</cIndOp>
+      {% if rps.ibs_cbs.tipo_de_operacao %}
+      <tpOper>{{ rps.ibs_cbs.tipo_de_operacao }}</tpOper>
+      {% endif %}
+      {% if rps.ibs_cbs.tipo_do_ente_governamental %}
+      <tpEnteGov>{{ rps.ibs_cbs.tipo_do_ente_governamental }}</tpEnteGov>
+      {% endif %}
+			<indDest>{{ rps.ibs_cbs.tipo_do_destinatario }}</indDest>
+      {% if rps.ibs_cbs.destinaratrio %}
+			<dest>
+				<CNPJ>{{ rps.ibs_cbs.destinatario.cnpj }}</CNPJ>
+				<xNome>{{ rps.ibs_cbs.destinatario.nome }}</xNome>
+			</dest>
+      {% endif %}
+			<valores>
+        {% if rps.ibs_cbs.grupo_repasses_ressarcimentos %}
+				<gReeRepRes>
+          <documentos>
+            {% if rps.ibs_cbs.grupo_repasses_ressarcimentos.dfe %}
+            <dFeNacional>
+              <tipoChaveDFe>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.dfe.tipo }}</tipoChaveDFe>
+              {% if rps.ibs_cbs.grupo_repasses_ressarcimentos.dfe.xtipo %}
+              <xTipoChaveDFe>{{rps.ibs_cbs.grupo_repasses_ressarcimentos.dfe.xtipo}}</xTipoChaveDFe>
+			        {% endif %}
+              <chaveDFe>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.dfe.chave}}</chaveDFe>
+						</dFeNacional>
+            {% endif %}
+            {% if rps.ibs_cbs.grupo_repasses_ressarcimentos.outros_doc %}
+            <docOutro>
+              <nDoc>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.outros_doc.numero }}</nDoc>
+              <xDoc>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.outros_doc.descricao }}</xDoc>
+            </docOutro>
+            {% endif %}
+            {% if rps.ibs_cbs.grupo_repasses_ressarcimentos.fornecedor %}
+						<fornec>
+              <CNPJ>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.fornecedor.cnpj }}</CNPJ>
+							<xNome>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.fornecedor.nome }}</xNome> 
+						</fornec>
+            {% endif %}
+						<dtEmiDoc>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.data_emissao }}</dtEmiDoc>
+						<dtCompDoc>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.data_competencia }}</dtCompDoc>
+						<tpReeRepRes>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.tipo_de_valor }}</tpReeRepRes>
+						<xTpReeRepRes>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.descricao }}</xTpReeRepRes>
+						<vlrReeRepRes>{{ rps.ibs_cbs.grupo_repasses_ressarcimentos.valor }}</vlrReeRepRes>
+					</documentos>
+				</gReeRepRes>
+        {% endif %}
+				<trib>
+					<gIBSCBS>
+						<cClassTrib>{{rps.ibs_cbs.classificacao_tributaria }}</cClassTrib>
+            {% if rps.ibs_cbs.tributacao_regular %}
+            <gTribRegular>{{ rps.ibs_cbs.tributacao_regular.classificacao_tributaria }}</gTribRegular>
+            {% endif %}
+          </gIBSCBS>
+				</trib>
+			</valores>
+		</IBSCBS>
     {% endif %}
   </RPS>
   {% endfor %}
