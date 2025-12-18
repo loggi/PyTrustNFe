@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 
-VERSION = "1.0.49.dev0"
+VERSION = "1.0.51.dev0"
 
 
 setup(
@@ -58,7 +58,7 @@ later (LGPLv2+)",
         'lxml >= 3.5.0, < 5',
         'suds-community',
         'suds-requests4',
-        'reportlab',
+        'reportlab >= 3.5.0, < 4',
         'pytz',
         'zeep',
     ],
