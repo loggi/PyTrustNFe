@@ -57,13 +57,14 @@ def _send(certificado, method, **kwargs):
         response = getattr(client.service, method)(1, xml_send)
     except suds.WebFault as e:
         return {
+            "url": base_url,
             "sent_xml": xml_send,
             "received_xml": e.fault.faultstring,
             "object": None,
         }
 
     response, obj = sanitize_response(response)
-    return {"sent_xml": xml_send, "received_xml": response, "object": obj}
+    return {"sent_xml": xml_send, "received_xml": response, "object": obj, "url": base_url}
 
 
 def envio_rps(certificado, **kwargs):
