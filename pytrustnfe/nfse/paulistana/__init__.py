@@ -76,7 +76,7 @@ def _get_schema_version(method, kwargs):
         "TesteEnvioLoteRPS": "nfse",
     }
 
-    attribute = getattr(method_to_attribute_mapper, method, '')
+    attribute = method_to_attribute_mapper.get(method, '')
     schema_version = getattr(kwargs, attribute, '1')
 
     return schema_version
