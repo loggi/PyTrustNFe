@@ -69,15 +69,16 @@ def _send(certificado, method, **kwargs):
 
 
 def _get_schema_version(method, kwargs):
-    method_to_attribute_mapper = {
+    method_to_node_mapper = {
         "ConsultaNFe": "consulta",
         "CancelamentoNFe": "cancelamento",
         "EnvioLoteRPS": "nfse",
         "TesteEnvioLoteRPS": "nfse",
     }
 
-    attribute = method_to_attribute_mapper.get(method, '')
-    schema_version = getattr(kwargs, attribute, '1')
+    node_name = method_to_node_mapper.get(method, '')
+    node = kwargs.get(node_name, {})
+    schema_version = node.get('versao', '1')
 
     return schema_version
 
