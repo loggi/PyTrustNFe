@@ -54,7 +54,8 @@ def _send(certificado, method, **kwargs):
     xml_send = signer.assina_xml(xml_send, "")
 
     try:
-        response = getattr(client.service, method)(1, xml_send)
+        schema_version = _get_schema_version(method, kwargs)
+        response = getattr(client.service, method)(schema_version, xml_send)
     except suds.WebFault as e:
         return {
             "url": base_url,
@@ -66,6 +67,20 @@ def _send(certificado, method, **kwargs):
     response, obj = sanitize_response(response)
     return {"sent_xml": xml_send, "received_xml": response, "object": obj, "url": base_url}
 
+
+def _get_schema_version(method, kwargs):
+    method_to_node_mapper = {
+        "ConsultaNFe": "consulta",
+        "CancelamentoNFe": "cancelamento",
+        "EnvioLoteRPS": "nfse",
+        "TesteEnvioLoteRPS": "nfse",
+    }
+
+    node_name = method_to_node_mapper.get(method, '')
+    node = kwargs.get(node_name, {})
+    schema_version = node.get('versao', '1')
+
+    return schema_version
 
 def envio_rps(certificado, **kwargs):
     return _send(certificado, "EnvioRPS", **kwargs)
