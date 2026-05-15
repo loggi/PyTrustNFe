@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       version:
-        description: "Version (CalVer): YYYYMMDD.XX — same naming as loggi/xproto."
+        description: "Version (CalVer): YYYYMMDD.X — (e.g. 20260515.1)."
         required: true
         type: string
       isSnapshot:
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "CalVer: YYYYMMDD.XX (e.g. 20260515.01)"
+        description: "CalVer: YYYYMMDD.X (e.g. 20260515.1; avoid leading zeros after the dot)"
         required: true
         type: string
       isSnapshot:

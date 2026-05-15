@@ -10,7 +10,7 @@ Biblioteca Python que tem por objetivo enviar NFe, NFCe e NFSe no Brasil
 
 Este fork usa **Python `>=3.8.1,<3.9`** e **[Poetry 1.8.5](https://python-poetry.org/)** como fonte de verdade (`pyproject.toml` + `poetry.lock`). Use **Docker**, comandos locais e/ou **GitHub Actions** (`.github/workflows/publish-python.yaml`) que publicam no **AWS CodeArtifact** (mesmo padrão que o pacote Python do monorepo **xproto**).
 
-**Versões (publicação Loggi):** **CalVer** **`YYYYMMDD.XX`**, (ex.: `20260515.1`). O segmento após o ponto segue normalização **PEP 440** (`20260515.01` e `20260515.1` são equivalentes na publicação; no CodeArtifact o `pip`/índice costuma exibir **`20260515.1`**). Builds *snapshot* no CI ganham sufixo local `-dev+<git short sha>`.
+**Versões (publicação Loggi):** **CalVer** **`YYYYMMDD.X`** sem zero à esquerda após o ponto — ex.: **`20260515.1`**, **`20260515.2`** (esse é o formato a usar em `pyproject.toml`, tags e workflows; evite **`20260515.01`**). Builds *snapshot* no CI ganham sufixo local `-dev+<git short sha>`.
 
 **Notas de versão das libs:** faixas altas compatíveis com 3.8 (por exemplo `urllib3` 2.x, `zeep` 4.x, `lxml` 5.x); `cryptography` fica **`>=42,<47`** enquanto o **signxml** atual referencia curvas ECC legadas removidas no 47; `reportlab` fica **`<4`** para evitar `md5(..., usedforsecurity=False)` incompatível com alguns backends `hashlib` quando OpenSSL está no processo.
 

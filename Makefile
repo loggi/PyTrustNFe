@@ -29,7 +29,7 @@ wheel: dist
 aws-sso:
 	aws sso login --profile $(AWS_PROFILE)
 
-# Set CalVer in pyproject, then CodeArtifact publish (build+wheels). Usage: make publish-release VERSION=20260515.02
+# Set CalVer in pyproject, then CodeArtifact publish (build+wheels). Usage: make publish-release VERSION=20260515.2
 publish-release:
 	@test -n "$(VERSION)" || (echo "usage: make publish-release VERSION=YYYYMMDD.XX" >&2; exit 1)
 	poetry version "$(VERSION)"
