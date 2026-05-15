@@ -4,23 +4,26 @@
 
 import os
 import suds
-from OpenSSL import crypto
 from base64 import b64encode
 from pytrustnfe.xml import render_xml, sanitize_response
 from pytrustnfe.client import get_authenticated_client
-from pytrustnfe.certificado import extract_cert_and_key_from_pfx, save_cert_key
+from pytrustnfe.certificado import (
+    extract_cert_and_key_from_pfx,
+    load_privatekey_from_pfx,
+    rsa_or_ec_sha1_sign,
+    save_cert_key,
+)
 from pytrustnfe.nfse.assinatura import Assinatura
 
 
 def sign_tag(certificado, **kwargs):
-    pkcs12 = crypto.load_pkcs12(certificado.pfx, certificado.password)
-    key = pkcs12.get_privatekey()
+    key = load_privatekey_from_pfx(certificado.pfx, certificado.password)
     if "nfse" in kwargs:
         for item in kwargs["nfse"]["lista_rps"]:
-            signed = crypto.sign(key, item["assinatura"], "SHA1")
+            signed = rsa_or_ec_sha1_sign(key, item["assinatura"])
             item["assinatura"] = b64encode(signed)
     if "cancelamento" in kwargs:
-        signed = crypto.sign(key, kwargs["cancelamento"]["assinatura"], "SHA1")
+        signed = rsa_or_ec_sha1_sign(key, kwargs["cancelamento"]["assinatura"])
         kwargs["cancelamento"]["assinatura"] = b64encode(signed)
 
 

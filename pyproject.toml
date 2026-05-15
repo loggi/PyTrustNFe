@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "pytrustnfe3"
+version = "1.1.0.dev0"
+description = "PyTrustNFe — biblioteca para envio de NF-e / NFSe no Brasil (fork Loggi: pacote distribuído como pytrustnfe3)."
+authors = ["Loggi <dev@loggi.com>", "Danimar Ribeiro <danimaribeiro@gmail.com>"]
+license = "LGPL-2.1+"
+readme = "README.md"
+repository = "https://github.com/loggi/PyTrustNFe"
+packages = [{ include = "pytrustnfe" }]
+include = [
+    { path = "pytrustnfe/nfe/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfe/fonts", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/paulistana/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/dsf/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/ginfes/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/simpliss/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/betha/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/susesu/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/imperial/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/floripa/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/carioca/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/bh/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/mga/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/nfse/aparecida/templates", format = ["sdist", "wheel"] },
+    { path = "pytrustnfe/xml/schemas", format = ["sdist", "wheel"] },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<3.9"
+urllib3 = ">=1.26,<3"
+six = ">=1.16,<2"
+xmlsec = ">=1.3.13,<2"
+Jinja2 = ">=3.1,<4"
+# signxml 4.x maps weak curves that cryptography 47+ removed from the bindings.
+cryptography = ">=42,<47"
+signxml = ">=3.2,<5"
+lxml = ">=5,<6"
+suds-community = ">=1.1,<2"
+suds-requests4 = ">=1.0,<2"
+reportlab = ">=3.6.13,<4"
+pytz = "*"
+zeep = ">=4,<5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7,<9"
+pytest-cov = ">=4,<7"
+flake8 = ">=6.1,<7.2"
+black = ">=23,<25"
+
+[build-system]
+requires = ["poetry-core>=1.8.0,<2"]
+build-backend = "poetry.core.masonry.api"

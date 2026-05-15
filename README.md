@@ -6,14 +6,76 @@ Biblioteca Python que tem por objetivo enviar NFe, NFCe e NFSe no Brasil
 [![Build Status](https://travis-ci.org/danimaribeiro/PyTrustNFe.svg?branch=master3)](https://travis-ci.org/danimaribeiro/PyTrustNFe)
 [![PyPI version](https://badge.fury.io/py/PyTrustNFe3.svg)](https://badge.fury.io/py/PyTrustNFe3)
 
-Dependências:
-* PyXmlSec
-* lxml
-* signxml
-* suds-community
-* suds-requests4
-* reportlab
-* Jinja2
+## Empacotamento Loggi (Poetry — Python 3.8 / política moderna)
+
+Este fork usa **Python `>=3.8.1,<3.9`** e **[Poetry 1.8.5](https://python-poetry.org/)** como fonte de verdade (`pyproject.toml` + `poetry.lock`). Não há CI automatizado aqui — use **Docker** ou comandos locais.
+
+**Compatibilidade com o loggi-web:** o aplicativo web ainda pode estar preso ao **Python 3.7** até uma migração. **Não** instale esta linha do `pytrustnfe3` (1.1.x em diante no mesmo ambientes 3.7) até o web subir para **3.8.1+** e um novo `poetry.lock` fechar. Depois dessa migração, tratamos conflitos de pins como sempre: **PR coordenada** no loggi-web sempre que deps compartilhadas divergirem.
+
+**Notas de versão das libs:** faixas altas compatíveis com 3.8 (por exemplo `urllib3` 2.x, `zeep` 4.x, `lxml` 5.x); `cryptography` fica **`>=42,<47`** enquanto o **signxml** atual referencia curvas ECC legadas removidas no 47; `reportlab` fica **`<4`** para evitar `md5(..., usedforsecurity=False)` incompatível com alguns backends `hashlib` quando OpenSSL está no processo.
+
+**Empilhamento `lxml` / `xmlsec`:** rodas públicas podem causar `lxml & xmlsec libxml2 library version mismatch`. O **Dockerfile** usa **bookworm**, reinstala `lxml` e `xmlsec` **do código-fonte** contra as libs do sistema. Em hosts sem esse alinhamento, use o mesmo comando no venv ou confie na imagem:
+
+```bash
+poetry run python - <<'PY'
+import subprocess, sys
+from pkg_resources import get_distribution
+lv = get_distribution("lxml").version
+xv = get_distribution("xmlsec").version
+subprocess.check_call(
+    [sys.executable, "-m", "pip", "install", "--no-cache-dir", "--force-reinstall",
+     "--no-binary=lxml", "--no-binary=xmlsec", f"lxml=={lv}", f"xmlsec=={xv}"]
+)
+PY
+```
+
+**Cache Poetry / hashes `reportlab`:** se um wheel falhar no hash verificado, limpe `~/.cache/pypoetry/artifacts` e rode `poetry install` de novo.
+
+### Comandos úteis (máquina local)
+
+Python **3.8.1+** e Poetry **1.8.5** (`pipx install poetry==1.8.5`):
+
+```bash
+poetry install --with dev
+poetry run pytest
+```
+
+Imagem Docker (**Debian bookworm**; falha no build se `pytest` falhar):
+
+```bash
+make docker-build   # ou: docker build -t pytrustnfe-build .
+make docker-test
+```
+
+Gerar wheel no host (monta `./dist`):
+
+```bash
+make docker-wheel   # equivale a build + cópia de dist/*.whl para ./dist/
+```
+
+Publicação manual no índice privado (placeholder — alinhar bucket/prefixo com Platform):
+
+```bash
+aws sso login --profile <perfil>
+aws s3 cp dist/pytrustnfe3-<versão>-py3-none-any.whl s3://pypi.loggi.com/<prefix>/pytrustnfe3/
+# Em seguida: regenerar o index PEP 503 daquele prefixo (processo ou script mantido pela Platform).
+```
+
+Depois do upload: PR no **loggi-web** (Python **≥3.8.1**, novo `pytrustnfe3`, pins/`poetry.lock` até `poetry install` passar).
+
+---
+
+Dependências (resumo — detalhes em `pyproject.toml`):
+
+* PyXmlSec / `xmlsec`
+* `lxml`
+* `signxml`
+* `suds-community`
+* `suds-requests4`
+* `reportlab`
+* `Jinja2`
+
+
 
 
 NFSe - Cidades atendidas

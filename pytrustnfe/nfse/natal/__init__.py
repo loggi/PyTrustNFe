@@ -2,8 +2,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import os
-from OpenSSL import crypto
-from base64 import b64encode
 
 from requests import Session
 from zeep import Client
