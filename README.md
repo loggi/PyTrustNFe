@@ -43,14 +43,14 @@ poetry run pytest
 Imagem Docker (**Debian bookworm**; falha no build se `pytest` falhar):
 
 ```bash
-make docker-build   # ou: docker build -t pytrustnfe-build .
-make docker-test
+make build   # ou: docker build -t pytrustnfe-build .
+make test
 ```
 
 Gerar **wheel + sdist** no host (copia para `./dist`):
 
 ```bash
-make docker-dist   # antes: make docker-build ; gera .whl e .tar.gz alinhados ao version do pyproject.toml
+make dist   # antes: make build ; gera .whl e .tar.gz alinhados ao version do pyproject.toml
 ```
 
 Publicação no índice privado (`pypi.loggi.com`, prefixo PEP 503 de `pytrustnfe3`):
@@ -59,6 +59,8 @@ Publicação no índice privado (`pypi.loggi.com`, prefixo PEP 503 de `pytrustnf
 make aws-sso        # aws sso login --profile platform-root-sso (quando a sessão expirar)
 make publish-s3     # envia .whl + .tar.gz para s3://…/pytrustnfe3/ e regenera index.html
 ```
+
+`ops/publish-s3.sh` não usa `aws s3 sync` no prefixo: só indexa **`*.whl` e `*.tar.gz` diretos** (ignora subpastas como `nfe-sp/`). Sync recursivo falhava com `ENOTDIR` no bucket atual.
 
 Variáveis opcionais: `AWS_PROFILE`, `PYPI_PYTRUSTNFES3_PREFIX` (Makefile). Detalhes: `ops/publish-s3.sh`.
 

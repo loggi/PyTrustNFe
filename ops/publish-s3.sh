@@ -54,20 +54,86 @@ done
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
-echo "Syncing ${DEST} (excluding index.html) …"
-aws s3 sync "$DEST" "$tmpdir/" --profile "$AWS_PROFILE" --exclude 'index.html'
+export AWS_PROFILE INDEX_TMP="$tmpdir"
+export PYPI_S3_LIST_PREFIX="$DEST"
 
-{
-  echo '<!DOCTYPE html>'
-  echo '<html><head><meta charset="UTF-8"><title>Package Index</title></head><body>'
-  for f in "$tmpdir"/*.whl "$tmpdir"/*.tar.gz; do
-    [[ -f "$f" ]] || continue
-    base=$(basename "$f")
-    hash=$(sha256sum "$f" | awk '{print $1}')
-    echo "<a href=\"${base}#sha256=${hash}\">${base}</a><br>"
-  done
-  echo '</body></html>'
-} >"${tmpdir}/index.html"
+# Do not use `aws s3 sync`: this prefix often has nested keys (nfe-sp/, pytrustnfe3/) beside flat wheels.
+# Recursive sync hits ENOTDIR when the local layout cannot represent both files and prefixes.
+echo "Refreshing PEP 503 index (flat *.whl / *.tar.gz only under ${DEST}) …"
+python3 <<'PYINDEX'
+import hashlib
+import json
+import os
+import re
+import subprocess
+
+dest = os.environ["PYPI_S3_LIST_PREFIX"].rstrip("/") + "/"
+tmpdir = os.environ["INDEX_TMP"]
+profile = os.environ["AWS_PROFILE"]
+
+m = re.match(r"s3://([^/]+)/(.+)", dest)
+if not m:
+    raise SystemExit(f"Bad S3 URL: {dest!r}")
+bucket, prefix = m.group(1), m.group(2)
+if not prefix.endswith("/"):
+    prefix += "/"
+
+
+def aws_json(argv):
+    out = subprocess.check_output(["aws", *argv, "--profile", profile, "--output", "json"], text=True)
+    return json.loads(out)
+
+
+keys = []
+token = None
+while True:
+    cmd = ["s3api", "list-objects-v2", "--bucket", bucket, "--prefix", prefix]
+    if token:
+        cmd += ["--continuation-token", token]
+    data = aws_json(cmd)
+    for obj in data.get("Contents", []):
+        key = obj["Key"]
+        if not key.startswith(prefix):
+            continue
+        rel = key[len(prefix) :]
+        if "/" in rel:
+            continue
+        if rel.endswith(".whl") or rel.endswith(".tar.gz"):
+            keys.append(key)
+    token = data.get("NextContinuationToken")
+    if not token:
+        break
+
+keys = sorted(set(keys))
+
+for key in keys:
+    base = os.path.basename(key)
+    path = os.path.join(tmpdir, base)
+    subprocess.check_call(
+        ["aws", "s3", "cp", f"s3://{bucket}/{key}", path, "--profile", profile],
+        stdout=subprocess.DEVNULL,
+    )
+
+lines = [
+    "<!DOCTYPE html>",
+    '<html><head><meta charset="UTF-8"><title>Package Index</title></head><body>',
+]
+for key in keys:
+    base = os.path.basename(key)
+    path = os.path.join(tmpdir, base)
+    dig = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            dig.update(chunk)
+    digest = dig.hexdigest()
+    lines.append(f'<a href="{base}#sha256={digest}">{base}</a><br>')
+lines.append("</body></html>")
+
+with open(os.path.join(tmpdir, "index.html"), "w", encoding="utf-8") as fp:
+    fp.write("\n".join(lines))
+
+print(f"Indexed {len(keys)} flat artifacts (skipped nested prefixes).")
+PYINDEX
 
 echo "Writing ${DEST}index.html"
 aws s3 cp "${tmpdir}/index.html" "${DEST}index.html" \
