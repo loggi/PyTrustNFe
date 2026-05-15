@@ -47,19 +47,20 @@ make docker-build   # ou: docker build -t pytrustnfe-build .
 make docker-test
 ```
 
-Gerar wheel no host (monta `./dist`):
+Gerar **wheel + sdist** no host (copia para `./dist`):
 
 ```bash
-make docker-wheel   # equivale a build + cópia de dist/*.whl para ./dist/
+make docker-dist   # antes: make docker-build ; gera .whl e .tar.gz alinhados ao version do pyproject.toml
 ```
 
-Publicação manual no índice privado (placeholder — alinhar bucket/prefixo com Platform):
+Publicação no índice privado (`pypi.loggi.com`, prefixo PEP 503 de `pytrustnfe3`):
 
 ```bash
-aws sso login --profile <perfil>
-aws s3 cp dist/pytrustnfe3-<versão>-py3-none-any.whl s3://pypi.loggi.com/<prefix>/pytrustnfe3/
-# Em seguida: regenerar o index PEP 503 daquele prefixo (processo ou script mantido pela Platform).
+make aws-sso        # aws sso login --profile platform-root-sso (quando a sessão expirar)
+make publish-s3     # envia .whl + .tar.gz para s3://…/pytrustnfe3/ e regenera index.html
 ```
+
+Variáveis opcionais: `AWS_PROFILE`, `PYPI_PYTRUSTNFES3_PREFIX` (Makefile). Detalhes: `ops/publish-s3.sh`.
 
 Depois do upload: PR no **loggi-web** (Python **≥3.8.1**, novo `pytrustnfe3`, pins/`poetry.lock` até `poetry install` passar).
 
