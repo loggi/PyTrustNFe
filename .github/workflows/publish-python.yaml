@@ -1,0 +1,83 @@
+name: Publish pytrustnfe3 to CodeArtifact
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version (CalVer): YYYYMMDD.XX — same naming as loggi/xproto."
+        required: true
+        type: string
+      isSnapshot:
+        description: "If true (xproto-style): FINAL_VERSION=<base>-dev+<git short sha> with base CalVer."
+        required: true
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "CalVer: YYYYMMDD.XX (e.g. 20260515.01)"
+        required: true
+        type: string
+      isSnapshot:
+        description: "Snapshot build: append -dev+<git short sha> to the CalVer base (same as xproto)."
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CODE_ARTIFACT }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CODE_ARTIFACT }}
+          aws-region: ${{ secrets.AWS_REGION_CODE_ARTIFACT }}
+
+      - name: CodeArtifact authorization token
+        run: |
+          CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token \
+            --domain loggi \
+            --domain-owner ${{ secrets.AWS_DOMAIN_OWNER_CODE_ARTIFACT }} \
+            --region ${{ secrets.AWS_REGION_CODE_ARTIFACT }} \
+            --query authorizationToken --output text)
+          echo "::add-mask::$CODEARTIFACT_AUTH_TOKEN"
+          echo "CODEARTIFACT_AUTH_TOKEN=$CODEARTIFACT_AUTH_TOKEN" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --with dev --no-interaction --no-root
+
+      - name: Compose version string
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.isSnapshot }}" = "true" ]; then
+            echo "FINAL_VERSION=${BASE}-dev+$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          else
+            echo "FINAL_VERSION=${BASE}" >> "$GITHUB_ENV"
+          fi
+        env:
+          BASE: ${{ inputs.version }}
+
+      - name: Publish to CodeArtifact
+        env:
+          POETRY_HTTP_BASIC_LOGGI_USERNAME: aws
+          POETRY_HTTP_BASIC_LOGGI_PASSWORD: ${{ env.CODEARTIFACT_AUTH_TOKEN }}
+          FINAL_VERSION: ${{ env.FINAL_VERSION }}
+        run: |
+          poetry version "$FINAL_VERSION"
+          poetry publish --build --repository loggi

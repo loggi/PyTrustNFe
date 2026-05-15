@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-COPY pyproject.toml poetry.lock README.md /workspace/
+COPY pyproject.toml poetry.lock poetry.toml README.md /workspace/
 COPY pytrustnfe /workspace/pytrustnfe
 COPY tests /workspace/tests
 

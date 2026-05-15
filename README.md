@@ -8,9 +8,9 @@ Biblioteca Python que tem por objetivo enviar NFe, NFCe e NFSe no Brasil
 
 ## Empacotamento Loggi (Poetry — Python 3.8 / política moderna)
 
-Este fork usa **Python `>=3.8.1,<3.9`** e **[Poetry 1.8.5](https://python-poetry.org/)** como fonte de verdade (`pyproject.toml` + `poetry.lock`). Não há CI automatizado aqui — use **Docker** ou comandos locais.
+Este fork usa **Python `>=3.8.1,<3.9`** e **[Poetry 1.8.5](https://python-poetry.org/)** como fonte de verdade (`pyproject.toml` + `poetry.lock`). Use **Docker**, comandos locais e/ou **GitHub Actions** (`.github/workflows/publish-python.yaml`) que publicam no **AWS CodeArtifact** (mesmo padrão que o pacote Python do monorepo **xproto**).
 
-**Compatibilidade com o loggi-web:** o aplicativo web ainda pode estar preso ao **Python 3.7** até uma migração. **Não** instale esta linha do `pytrustnfe3` (1.1.x em diante no mesmo ambientes 3.7) até o web subir para **3.8.1+** e um novo `poetry.lock` fechar. Depois dessa migração, tratamos conflitos de pins como sempre: **PR coordenada** no loggi-web sempre que deps compartilhadas divergirem.
+**Versões (publicação Loggi):** **CalVer** **`YYYYMMDD.XX`**, (ex.: `20260515.1`). O segmento após o ponto segue normalização **PEP 440** (`20260515.01` e `20260515.1` são equivalentes na publicação; no CodeArtifact o `pip`/índice costuma exibir **`20260515.1`**). Builds *snapshot* no CI ganham sufixo local `-dev+<git short sha>`.
 
 **Notas de versão das libs:** faixas altas compatíveis com 3.8 (por exemplo `urllib3` 2.x, `zeep` 4.x, `lxml` 5.x); `cryptography` fica **`>=42,<47`** enquanto o **signxml** atual referencia curvas ECC legadas removidas no 47; `reportlab` fica **`<4`** para evitar `md5(..., usedforsecurity=False)` incompatível com alguns backends `hashlib` quando OpenSSL está no processo.
 
@@ -53,18 +53,32 @@ Gerar **wheel + sdist** no host (copia para `./dist`):
 make dist   # antes: make build ; gera .whl e .tar.gz alinhados ao version do pyproject.toml
 ```
 
-Publicação no índice privado (`pypi.loggi.com`, prefixo PEP 503 de `pytrustnfe3`):
+**Publicação:** **AWS CodeArtifact** (repositório PyPI **`loggi`**, URL alinhada ao `xproto`: `pyproject.toml` + `poetry.toml`). O token vem de `aws codeartifact get-authorization-token`; o Poetry usa usuário **`aws`** e a senha igual ao token (`POETRY_HTTP_BASIC_LOGGI_*`).
+
+Makefile (build em `./dist` → publicar no CodeArtifact):
 
 ```bash
-make aws-sso        # aws sso login --profile platform-root-sso (quando a sessão expirar)
-make publish-s3     # envia .whl + .tar.gz para s3://…/pytrustnfe3/ e regenera index.html
+make aws-sso          # aws sso login --profile platform-prod-sso (quando precisar)
+make build            # Update the image and the latest changes
+make dist             # wheel + sdist em ./dist (imagem Docker)
+make publish-ca       # publica só o que já está em ./dist
+# ou um único comando (equivale a `poetry publish --build`):
+make publish-ca-build
 ```
 
-`ops/publish-s3.sh` não usa `aws s3 sync` no prefixo: só indexa **`*.whl` e `*.tar.gz` diretos** (ignora subpastas como `nfe-sp/`). Sync recursivo falhava com `ENOTDIR` no bucket atual.
+Bump de versão (**CalVer**) + build + upload (equivale ao que o CI faz):
 
-Variáveis opcionais: `AWS_PROFILE`, `PYPI_PYTRUSTNFES3_PREFIX` (Makefile). Detalhes: `ops/publish-s3.sh`.
+```bash
+make publish-release VERSION=20260515.1
+```
 
-Depois do upload: PR no **loggi-web** (Python **≥3.8.1**, novo `pytrustnfe3`, pins/`poetry.lock` até `poetry install` passar).
+Ou só publicar o que já está versionado / em `./dist`: use `make publish-ca` / `make publish-ca-build` acima.
+
+Variáveis opcionais Make/shell: `AWS_PROFILE`, `CODEARTIFACT_*` (ver `ops/publish-codeartifact.sh`).
+
+**CI:** `.github/workflows/publish-python.yaml` (`workflow_dispatch` ou `workflow_call`) — mesmo fluxo que `make publish-release` (`poetry version` + `poetry publish --build --repository loggi`). Secrets `AWS_ACCESS_KEY_ID_CODE_ARTIFACT`, `AWS_SECRET_ACCESS_KEY_CODE_ARTIFACT`, `AWS_REGION_CODE_ARTIFACT`, `AWS_DOMAIN_OWNER_CODE_ARTIFACT` (iguais ao workflow Python do xproto).
+
+Depois de publicar no CodeArtifact: atualize consumidores (**loggi-web**, **nfe-sp**, etc.) para a versão pinada e rode `poetry lock` onde couber.
 
 ---
 

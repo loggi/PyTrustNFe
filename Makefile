@@ -1,10 +1,12 @@
 IMAGE ?= pytrustnfe-build
 
-AWS_PROFILE ?= platform-root-sso
-# Trailing slash optional; normalize in ops/publish-s3.sh
-PYPI_PYTRUSTNFES3_PREFIX ?= s3://pypi.loggi.com/vqouYW66G1Q5LmpcgXGa/pytrustnfe3/
+AWS_PROFILE ?= platform-prod-sso
 
-.PHONY: build test shell dist wheel publish-s3 aws-sso
+CODEARTIFACT_DOMAIN ?= loggi
+CODEARTIFACT_DOMAIN_OWNER ?= 550903664601
+CODEARTIFACT_REGION ?= us-east-1
+
+.PHONY: build test shell dist wheel publish-release publish-ca publish-ca-build aws-sso
 
 build:
 	docker build -t $(IMAGE) .
@@ -21,14 +23,29 @@ dist:
 	docker run --rm -v "$(CURDIR)/dist:/out" $(IMAGE) sh -eu -c "\
 	  poetry build && cp dist/pytrustnfe3-*.whl /out/ && cp dist/pytrustnfe3-*.tar.gz /out/"
 
-# Alias kept for callers that only cared about wheels; uploads should use both artifacts.
+# Alias kept for callers that only cared about wheels.
 wheel: dist
 
-# AWS SSO session (interactive). Run once before publish-s3 when the profile session expired.
 aws-sso:
 	aws sso login --profile $(AWS_PROFILE)
 
-# Requires: `make dist` (or `poetry build` locally), aws CLI, and SSO for AWS_PROFILE.
-publish-s3:
-	@AWS_PROFILE="$(AWS_PROFILE)" S3_PKG_PREFIX="$(PYPI_PYTRUSTNFES3_PREFIX)" \
-	  bash "$(CURDIR)/ops/publish-s3.sh"
+# Set CalVer in pyproject, then CodeArtifact publish (build+wheels). Usage: make publish-release VERSION=20260515.02
+publish-release:
+	@test -n "$(VERSION)" || (echo "usage: make publish-release VERSION=YYYYMMDD.XX" >&2; exit 1)
+	poetry version "$(VERSION)"
+	$(MAKE) publish-ca-build
+
+# Publish ./dist/* to AWS CodeArtifact (build first: `make dist` or pass --build targets below).
+publish-ca:
+	AWS_PROFILE="$(AWS_PROFILE)" \
+	CODEARTIFACT_DOMAIN="$(CODEARTIFACT_DOMAIN)" \
+	CODEARTIFACT_DOMAIN_OWNER="$(CODEARTIFACT_DOMAIN_OWNER)" \
+	CODEARTIFACT_REGION="$(CODEARTIFACT_REGION)" \
+	  bash "$(CURDIR)/ops/publish-codeartifact.sh"
+
+publish-ca-build:
+	AWS_PROFILE="$(AWS_PROFILE)" \
+	CODEARTIFACT_DOMAIN="$(CODEARTIFACT_DOMAIN)" \
+	CODEARTIFACT_DOMAIN_OWNER="$(CODEARTIFACT_DOMAIN_OWNER)" \
+	CODEARTIFACT_REGION="$(CODEARTIFACT_REGION)" \
+	  bash "$(CURDIR)/ops/publish-codeartifact.sh" --build
