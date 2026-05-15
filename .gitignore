@@ -19,3 +19,6 @@ sent_xml.xml
 received_xml.xml
 nfse-exemplo.py
 .idea
+
+.coverage
+.coverage.*
