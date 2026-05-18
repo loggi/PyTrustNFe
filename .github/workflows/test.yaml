@@ -1,0 +1,79 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install OS dependencies (libxml2 / xmlsec stack)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates \
+            libxml2 libxslt1.1 libxmlsec1 libxmlsec1-openssl openssl \
+            libxml2-dev libxslt1-dev libxmlsec1-dev \
+            zlib1g-dev pkg-config build-essential
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.8"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --with dev
+
+      # Align lxml/xmlsec with system libxml2 (same strategy as Dockerfile).
+      - name: Rebuild lxml and xmlsec against system libraries
+        run: |
+          poetry run python - <<'PY'
+          import subprocess
+          import sys
+
+          from pkg_resources import get_distribution
+
+          lv = get_distribution("lxml").version
+          xv = get_distribution("xmlsec").version
+          subprocess.check_call(
+              [
+                  sys.executable,
+                  "-m",
+                  "pip",
+                  "install",
+                  "--no-cache-dir",
+                  "--force-reinstall",
+                  "--no-binary=lxml",
+                  "--no-binary=xmlsec",
+                  f"lxml=={lv}",
+                  f"xmlsec=={xv}",
+              ]
+          )
+          PY
+
+      - name: Run tests
+        run: poetry run pytest -q --cov=pytrustnfe --cov-report=term-missing

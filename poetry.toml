@@ -1,0 +1,3 @@
+# Publication endpoint for `poetry publish --repository loggi`.
+[repositories.loggi]
+url = "https://loggi-550903664601.d.codeartifact.us-east-1.amazonaws.com/pypi/loggi/"
